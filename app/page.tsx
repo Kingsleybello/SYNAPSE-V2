@@ -1,81 +1,193 @@
-// app/page.tsx
+// app/page.tsx - PART 1
 'use client';
 
-// Replace lines 4 through 11 in app/page.tsx with this corrected block:
+import React, { useState, useCallback, useEffect } from 'react';
+import { useAppKitAccount } from '@reown/appkit/react';
 import DashboardHeader from '../DashboardHeader';
 import InvestorProfileGateway from '../InvestorProfileGateway';
 import DealFlowInbox from '../DealFlowInbox';
-import CreatePitchForm from '../CreatePitchForm'; // Path Aligned to Root
-import SubmitMilestoneForm from '../SubmitMilestoneForm'; // Path Aligned to Root
-import InvestorReviewConsole from '../InvestorReviewConsole'; // Path Aligned to Root
+import CreatePitchForm from '../CreatePitchForm';
+import SubmitMilestoneForm from '../SubmitMilestoneForm';
+import InvestorReviewConsole from '../InvestorReviewConsole';
+import KanbanBoard from '../KanbanBoard';
+import SlideOutModal from '../SlideOutModal';
+import ChatSandbox from '../ChatSandbox';
+import TelemetryMonitor from '../TelemetryMonitor';
 
-export default function Page() {
+interface Card {
+  id: string;
+  title: string;
+  escrowAmount: string;
+  status: 'in-progress' | 'under-review' | 'released' | 'todo' | 'rejected';
+  submissionData: any;
+}
+
+interface TelemetryLog {
+  id: string;
+  timestamp: Date;
+  message: string;
+  type: 'init' | 'event' | 'error';
+}
+
+interface ChatMessage {
+  id: string;
+  timestamp: Date;
+  sender: 'builder' | 'investor' | 'system';
+  message: string;
+}
+
+const generateId = () => Math.random().toString(36).substring(2, 9);
+
+export default function SynapseDashboard() {
   const { address, isConnected } = useAppKitAccount();
   const [userRole, setUserRole] = useState<'builder' | 'investor'>('builder');
   
-  // V2 Core Handshake & Onboarding State Machine
+  // V2 Core Sandbox State Engine Parameters
+  const [agreementComplete, setAgreementComplete] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'none' | 'pending' | 'connected'>('none');
   const [pitchStatus, setPitchStatus] = useState<'none' | 'review' | 'accepted'>('none');
-  const [milestoneStatus, setMilestoneStatus] = useState<'in_progress' | 'under_review' | 'released'>('in_progress');
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [celebrationActive, setCelebrationActive] = useState(false);
 
-  // Simulated Inbound Handshake Queue data for the Investor Dashboard view
-  const mockIncomingRequests = [
-    {
-      id: 'req-402',
-      builderWallet: '0x71C...7f2d',
-      requestAbstract: 'Building decentralized high-speed liquidity vaults on Arbitrum Sepolia. Solving cross-chain capital inefficiencies via programmatic milestone escrow routers.',
-      createdAt: new Date().toISOString()
-    }
-  ];
+  const [slideOutOpen, setSlideOutOpen] = useState(false);
+  const [auditPanelOpen, setAuditPanelOpen] = useState(false);
 
-  // Automated Identity & Metric Syncing Hooks
+  const [card, setCard] = useState<Card>({
+    id: "m-902",
+    title: "Phase 1 MVP: Complete Web3 Relational Handshake Onboarding Funnel",
+    escrowAmount: "0.50 ETH",
+    status: "in-progress",
+    submissionData: null,
+  });
+
+  const [telemetryLogs, setTelemetryLogs] = useState<TelemetryLog[]>([]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
+    { id: generateId(), timestamp: new Date(Date.now() - 300000), sender: "builder", message: "Hey, I am starting work on the network onboarding gateway." },
+    { id: generateId(), timestamp: new Date(Date.now() - 240000), sender: "investor", message: "Perfect. Make sure the 280-char abstract constraint is enforced cleanly." }
+  ]);
+
+  const addTelemetryLog = useCallback((message: string, type: TelemetryLog['type'] = 'event') => {
+    setTelemetryLogs(prev => [...prev, { id: generateId(), timestamp: new Date(), message, type }]);
+  }, []);
+
+  const addChatMessage = useCallback((sender: ChatMessage['sender'], message: string) => {
+    setChatMessages(prev => [...prev, { id: generateId(), timestamp: new Date(), sender, message }]);
+  }, []);
+
+  useEffect(() => {
+    addTelemetryLog("[Novus Initialized]: HACKATHON_MIND_THE_PRODUCT_2026", "init");
+  }, [addTelemetryLog]);
+
   useEffect(() => {
     if (isConnected && address) {
-      if (typeof window !== 'undefined' && (window as any).novus) {
-        (window as any).novus('track', 'user_authenticated', { wallet: address.toLowerCase(), role: userRole });
-      }
+      addTelemetryLog(`[Novus Event]: user_authenticated { wallet: '${address.substring(0, 6)}...', role: '${userRole}' }`);
     }
-  }, [isConnected, address, userRole]);
+  }, [isConnected, address, userRole, addTelemetryLog]);
 
-  return (
-    <div className="min-h-screen bg-slate-950 flex flex-col font-sans text-slate-100 antialiased">
+  const animateCardTransition = useCallback((newStatus: Card['status'], callback?: () => void) => {
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setCard(prev => ({ ...prev, status: newStatus }));
+      setIsTransitioning(false);
+      callback?.();
+    }, 400);
+  }, []);
+
+  const handleViewModeChange = (mode: 'builder' | 'investor') => {
+    setUserRole(mode);
+    addTelemetryLog(`[Novus Event]: role_switched { newRole: '${mode}' }`);
+  };
+
+  const handleMockConnectionApproved = () => {
+    setConnectionStatus('connected');
+    addTelemetryLog("[Novus Event]: connection_accepted { requestId: 'req-402' }");
+    addChatMessage("system", "🤖 SYSTEM: Handshake connection request APPROVED by Vera Global Ventures.");
+  };
+
+  const handleMockPitchAccepted = () => {
+    setPitchStatus('accepted');
+    addTelemetryLog("[Novus Event]: pitch_accepted { fundingGoal: '50000 USDC' }");
+    addChatMessage("system", "🤖 SYSTEM: Venture proposal ACCEPTED. Phase 0 agreement parameters initialized.");
+    setAgreementComplete(true);
+  };
+
+  const handleSubmitProof = (data: any) => {
+    setCard(prev => ({ ...prev, submissionData: data }));
+    setSlideOutOpen(false);
+    addTelemetryLog("[Novus Event]: milestone_submitted { id: 'm-902' }");
+    animateCardTransition("under-review");
+    addChatMessage("system", `🤖 SYSTEM: Builder submitted proof link: ${data.proofUrl}`);
+  };
+
+  const handleApproveMilestone = () => {
+    setCelebrationActive(true);
+    addTelemetryLog("[Novus Event]: milestone_approved { payout: '0.50 ETH' }");
+    animateCardTransition("released", () => {
+      setTimeout(() => setCelebrationActive(false), 2500);
+    });
+    setAuditPanelOpen(false);
+    addChatMessage("system", "🎉 SYSTEM CONFIRMATION: Milestone APPROVED. 0.50 ETH programmatic payout disbursed successfully!");
+  };
+
+  function handleSendChatMessage(message: string) {
+    addChatMessage(userRole, message);
+    addTelemetryLog(`[Novus Event]: chat_message_sent { from: '${userRole}' }`);
+  }
+
+  // --- WORKSPACE RENDERING BOUNDARY LAYER ---
+    return (
+    <div className={`min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans transition-all duration-300 ${celebrationActive ? "ring-4 ring-emerald-500/50 ring-inset" : ""}`}>
+      
+      {/* Interactive Milestone Celebration Overlay */}
+      {celebrationActive && (
+        <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden flex items-center justify-center">
+          <div className="absolute inset-0 bg-emerald-500/5 animate-pulse backdrop-blur-sm" />
+          <div className="bg-emerald-600 text-white px-8 py-4 rounded-2xl font-bold text-lg shadow-2xl tracking-wide animate-bounce border border-emerald-400/40">
+            ✓ Programmatic Payout Disbursed — 0.50 ETH Sent
+          </div>
+        </div>
+      )}
+
       <DashboardHeader currentRole={userRole} />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto p-6 space-y-8 pb-24">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6 space-y-6 lg:space-y-8 pb-32">
         
-        {/* Unified Platform Controller Panel */}
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl">
+        {/* Top Control Controller Frame */}
+        <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl">
           <div>
-            <h1 className="text-2xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400">
+            <h1 className="text-xl lg:text-2xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400">
               Synapse Network Core V2
             </h1>
             <p className="text-xs text-slate-400 mt-1">
-              Venture Operations Hub: From verified network connections to automated smart contract distributions.
+              Venture Operations Hub: End-to-end sandbox pipeline tracking live from your repository layout.
             </p>
           </div>
 
-          {/* Persona Switcher Toggle Button Track */}
           <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800/80">
             <button
-              onClick={() => setUserRole('builder')}
-              className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${userRole === 'builder' ? 'bg-cyan-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+              type="button"
+              onClick={() => handleViewModeChange('builder')}
+              className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${userRole === 'builder' ? 'bg-cyan-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
             >
               Builder Terminal
             </button>
             <button
-              onClick={() => setUserRole('investor')}
-              className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${userRole === 'investor' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+              type="button"
+              onClick={() => handleViewModeChange('investor')}
+              className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${userRole === 'investor' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
             >
               Investor Console
             </button>
           </div>
         </div>
 
-        {/* Dynamic Funnel Flow Routing Node */}
-        <div className="flex justify-center items-start w-full">
+        {/* Dynamic Multi-Stage Onboarding Funnel Grid */}
+        <div className="w-full flex flex-col items-center gap-6 lg:gap-8">
+          
           {userRole === 'builder' ? (
-            <div className="w-full flex flex-col items-center gap-8 animate-fade-in">
-              {/* Sequence 1: Gated Handshake Channel */}
+            <div className="w-full flex flex-col items-center gap-6 lg:gap-8">
+              
+              {/* Step 1: Handshake Channel */}
               {connectionStatus === 'none' && (
                 <InvestorProfileGateway
                   investorId="inv-77"
@@ -83,27 +195,31 @@ export default function Page() {
                   investorWallet="0x3bF...89a1"
                   isInitialAccepting={true}
                   currentRole={userRole}
-                  onConnectionSubmitted={() => setConnectionStatus('pending')}
+                  onConnectionSubmitted={() => {
+                    setConnectionStatus('pending');
+                    addTelemetryLog("[Novus Event]: connection_requested { investorId: 'inv-77' }");
+                  }}
                 />
               )}
 
               {connectionStatus === 'pending' && (
-                <div className="bg-slate-900 border border-slate-800 p-8 rounded-2xl text-center max-w-md w-full shadow-lg">
-                  <div className="h-2 w-2 bg-amber-400 rounded-full animate-ping mx-auto mb-3" />
-                  <h3 className="text-base font-bold text-slate-200">Handshake Connection Pending</h3>
-                  <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
-                    Your 280-character abstract payload is sitting securely inside the investor deal stream box. Phase 2 pitching unlocks instantly upon approval.
+                <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl text-center max-w-md w-full shadow-xl space-y-4">
+                  <div className="h-2 w-2 bg-amber-400 rounded-full animate-ping mx-auto" />
+                  <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider">Handshake Request Pending</h3>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Your 280-character profile abstract is sitting inside the deal stream inbox. Detailed pitching unlocks upon approval.
                   </p>
                   <button 
-                    onClick={() => setConnectionStatus('connected')} 
-                    className="mt-4 px-4 py-1.5 bg-slate-800 text-slate-300 text-[10px] uppercase font-bold rounded-lg hover:bg-slate-700 border border-slate-700"
+                    type="button"
+                    onClick={handleMockConnectionApproved}
+                    className="w-full py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-[10px] uppercase tracking-wide font-bold text-cyan-400 hover:bg-slate-800 transition-colors"
                   >
-                    Simulate Investor Approval
+                    💡 Simulate Investor Approval
                   </button>
                 </div>
               )}
 
-              {/* Sequence 2: Detailed Venture Pitch Form Allocation */}
+              {/* Step 2: Venture Proposal Form */}
               {connectionStatus === 'connected' && pitchStatus === 'none' && (
                 <CreatePitchForm
                   investorId="inv-77"
@@ -112,59 +228,107 @@ export default function Page() {
                 />
               )}
 
-              {/* Sequence 3: Milestone Development Workspace */}
               {pitchStatus === 'review' && (
-                <div className="bg-slate-900 border border-slate-800 p-8 rounded-2xl text-center max-w-md w-full shadow-lg">
-                  <h3 className="text-base font-bold text-slate-200">Proposal Under Review</h3>
-                  <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
-                    Your venture thesis and timeline allocations have been broadcasted. Capital escrow parameters initialization unlocks upon acceptance.
+                <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl text-center max-w-md w-full shadow-xl space-y-4">
+                  <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider">Venture Proposal Under Audit</h3>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Your stablecoin budget requirements have been transmitted. Capital lock parameters unlock upon pitch acceptance.
                   </p>
                   <button 
-                    onClick={() => setPitchStatus('accepted')} 
-                    className="mt-4 px-4 py-1.5 bg-slate-800 text-slate-300 text-[10px] uppercase font-bold rounded-lg hover:bg-slate-700 border border-slate-700"
+                    type="button"
+                    onClick={handleMockPitchAccepted}
+                    className="w-full py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-[10px] uppercase tracking-wide font-bold text-emerald-400 hover:bg-slate-800 transition-colors"
                   >
-                    Simulate Pitch Acceptance
+                    💡 Simulate Pitch Acceptance
                   </button>
                 </div>
               )}
 
+              {/* Step 3: Active Milestone Workspace */}
               {pitchStatus === 'accepted' && (
-                <div className="w-full flex justify-center">
-                  {milestoneStatus === 'in_progress' ? (
-                    <div className="bg-slate-900 border border-slate-800 p-8 rounded-2xl text-center max-w-md w-full shadow-lg">
-                      <h3 className="text-base font-bold text-slate-200">Milestone Contract Deployed</h3>
-                      <p className="text-xs text-slate-400 mt-1.5">Development pipeline is fully unlocked. Escrow capital is secured on-chain.</p>
-                    </div>
-                  ) : (
-                    <div className="bg-slate-900/40 border border-dashed border-slate-800 rounded-2xl p-12 text-center max-w-md w-full">
-                      <p className="text-cyan-400 text-3xl mb-2">✓</p>
-                      <h3 className="text-base font-bold text-slate-200">Milestone Complete</h3>
-                    </div>
+                <KanbanBoard
+                  card={card}
+                  viewMode={userRole}
+                  isTransitioning={isTransitioning}
+                  onOpenSubmitModal={() => setSlideOutOpen(true)}
+                  onOpenAuditPanel={() => {}}
+                />
+              )}
+
+            </div>
+          ) : (
+            /* Investor Profile Control Flows */
+            <div className="w-full flex flex-col items-center gap-6 lg:gap-8">
+              {pitchStatus === 'accepted' && card.status === 'under-review' ? (
+                <div className="w-full flex flex-col items-center gap-6">
+                  <KanbanBoard
+                    card={card}
+                    viewMode={userRole}
+                    isTransitioning={isTransitioning}
+                    onOpenSubmitModal={() => {}}
+                    onOpenAuditPanel={() => setAuditPanelOpen(true)}
+                  />
+                  {auditPanelOpen && (
+                    <InvestorReviewConsole
+                      milestone={{
+                        id: card.id,
+                        title: card.title,
+                        proofUrl: card.submissionData?.proofUrl || 'https://github.com',
+                        builderNotes: card.submissionData?.notes || 'Core network gateway files successfully structured inside the root layout.',
+                        amountEscrowed: card.escrowAmount
+                      }}
+                      onReviewComplete={handleApproveMilestone}
+                    />
                   )}
+                </div>
+              ) : pitchStatus === 'accepted' && card.status === 'released' ? (
+                <KanbanBoard
+                  card={card}
+                  viewMode={userRole}
+                  isTransitioning={isTransitioning}
+                  onOpenSubmitModal={() => {}}
+                  onOpenAuditPanel={() => {}}
+                />
+              ) : (
+                /* Fallback Default Investor Intake Queue view */
+                <div className="w-full flex flex-col items-center gap-6">
+                  <DealFlowInbox
+                    initialRequests={connectionStatus === 'none' ? mockIncomingRequests : []}
+                    onActionProcessed={() => setConnectionStatus('connected')}
+                  />
+                  <InvestorProfileGateway
+                    investorId="inv-77"
+                    investorName="Vera Global Ventures"
+                    investorWallet="0x3bF...89a1"
+                    isInitialAccepting={true}
+                    currentRole={userRole}
+                    onConnectionSubmitted={() => {}}
+                  />
                 </div>
               )}
             </div>
-          ) : (
-            /* Investor Control Panel Execution Stream */
-            <div className="w-full flex flex-col items-center gap-8 animate-fade-in">
-              <div className="w-full flex flex-col items-center gap-6">
-                <DealFlowInbox
-                  initialRequests={mockIncomingRequests}
-                  onActionProcessed={() => alert('Deal stream queue updated.')}
-                />
-                <InvestorProfileGateway
-                  investorId="inv-77"
-                  investorName="Vera Global Ventures"
-                  investorWallet="0x3bF...89a1"
-                  isInitialAccepting={true}
-                  currentRole={userRole}
-                  onConnectionSubmitted={() => {}}
-                />
-              </div>
-            </div>
           )}
+
+          {/* Persistent Sandbox Operational Communication Feed & Telemetry Monitors */}
+          <div className="grid grid-cols-1 w-full gap-6">
+            <ChatSandbox 
+              messages={chatMessages} 
+              viewMode={userRole} 
+              onSendMessage={(txt) => handleSendChatMessage(txt)} 
+            />
+            <TelemetryMonitor logs={telemetryLogs} />
+          </div>
+
         </div>
       </main>
+
+      {/* Slide-over Builder Drawer Element */}
+      <SlideOutModal
+        open={slideOutOpen}
+        onClose={() => setSlideOutOpen(false)}
+        onSubmit={handleSubmitProof}
+      />
     </div>
   );
-}
+              }
+

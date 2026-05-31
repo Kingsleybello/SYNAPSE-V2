@@ -1,14 +1,13 @@
 // app/page.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useAppKitAccount } from '@reown/appkit/react';
-import DashboardHeader from '../DashboardHeader'; // Path Fixed
-import InvestorProfileGateway from '../InvestorProfileGateway'; // Path Fixed
-import DealFlowInbox from '../DealFlowInbox'; // Path Fixed
-import CreatePitchForm from './components/CreatePitchForm';
-import SubmitMilestoneForm from './components/SubmitMilestoneForm';
-import InvestorReviewConsole from './components/InvestorReviewConsole';
+// Replace lines 4 through 11 in app/page.tsx with this corrected block:
+import DashboardHeader from '../DashboardHeader';
+import InvestorProfileGateway from '../InvestorProfileGateway';
+import DealFlowInbox from '../DealFlowInbox';
+import CreatePitchForm from '../CreatePitchForm'; // Path Aligned to Root
+import SubmitMilestoneForm from '../SubmitMilestoneForm'; // Path Aligned to Root
+import InvestorReviewConsole from '../InvestorReviewConsole'; // Path Aligned to Root
 
 export default function Page() {
   const { address, isConnected } = useAppKitAccount();

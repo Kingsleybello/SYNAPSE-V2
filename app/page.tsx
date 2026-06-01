@@ -2,13 +2,12 @@
 'use client';
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { useAppKitAccount } from '@reown/appkit/react';
 import DashboardHeader from '../DashboardHeader';
 import InvestorProfileGateway from '../InvestorProfileGateway';
 import DealFlowInbox from '../DealFlowInbox';
-import CreatePitchForm from '../CreatePitchForm';
-import SubmitMilestoneForm from '../SubmitMilestoneForm';
-import InvestorReviewConsole from '../InvestorReviewConsole';
+import CreatePitchForm from '../CreatePitchForm'; 
+import SubmitMilestoneForm from '../SubmitMilestoneForm'; 
+import InvestorReviewConsole from '../InvestorReviewConsole'; 
 import KanbanBoard from '../KanbanBoard';
 import SlideOutModal from '../SlideOutModal';
 import ChatSandbox from '../ChatSandbox';

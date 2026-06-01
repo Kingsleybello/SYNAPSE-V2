@@ -1,13 +1,13 @@
-# 🧠 Synapse Network Core V2 | Web3 Venture Operations Protocol
+# 🧠 Synapse Network Core V2 | The Neural Connection Between Code and Capital
 
 > **Official Submission for the "Mind the Product: Everyone Ships Now" Hackathon (June 20, 2026)**  
 > Deployed Interactive Funnel: [Live v0.dev Interactive Prototype Sandbox](https://v0.dev)
 
-Synapse V2 is an intelligent decentralized venture operations network that unifies networking, pitch validation, milestones tracking, and smart contract token distribution into a single responsive platform. Built explicitly to eliminate fragmented Web2 tools (LinkedIn, Telegram, DocuSign, Jira) by connecting verified digital delivery directly to cryptographic capital release.
+### 🚀 The Vision
+Synapse is the **neural connection** between code execution, product delivery, and fund distribution. It is a unified Web3 lifecycle network connecting product teams and fund managers to handle discovery, milestone tracking, and secure capital release inside one application.
 
----
+Synapse eliminates fragmentation in Web3 venture operations. Currently, networking happens on LinkedIn, pitching on Telegram, agreement signing on DocuSign, project management on Jira, and payouts via manual multi-sigs. Synapse consolidates this entire pipeline, tying cryptographic multi-sig escrow directly to verified product milestones.
 
-## 🛠️ Relational Repository & Architecture Mapping
 
 *   **`app/page.tsx`**: Main entry application cockpit orchestrating real-time state switches, onboarding funnels, and component rendering streams.
 *   **`lib/types.ts`**: Strict TypeScript data contracts enforcing layout parameters, tracking structures, and database keys.
